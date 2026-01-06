@@ -1,0 +1,73 @@
+-- Table: jobstatusnames
+CREATE TABLE jobstatusnames (
+    jobstatus_id SERIAL PRIMARY KEY,
+    jobstatus_name VARCHAR(200) NOT NULL
+);
+
+-- Table: jobtype
+CREATE TABLE jobtype (
+    jobtype_id SERIAL PRIMARY KEY,
+    jobtype_name VARCHAR(200) NOT NULL,
+    jobtype_max_retries SMALLINT NOT NULL DEFAULT 7
+);
+
+-- Table: jobs_contentstore
+CREATE TABLE jobs_contentstore (
+    global_session VARCHAR(36) PRIMARY KEY,
+    bvp_content_create TEXT NOT NULL,
+    bvp_content_update TEXT NOT NULL,
+    account_name VARCHAR(30) NOT NULL
+);
+
+-- Table: jobsstatus
+CREATE TABLE jobsstatus (
+    jobid SERIAL PRIMARY KEY,
+    jobstatus_id INT NOT NULL,
+    jobtype_id INT NOT NULL,
+    job_priority INT NOT NULL DEFAULT 50,
+    job_failure_count INT NOT NULL DEFAULT 0,
+    job_step INT NOT NULL DEFAULT 0,
+    global_session VARCHAR(36) NOT NULL,
+    fullfilename VARCHAR(1000),
+    task_id VARCHAR(50),
+
+    CONSTRAINT fk_jobsstatus_jobstatus FOREIGN KEY (jobstatus_id) REFERENCES jobstatusnames(jobstatus_id) ON DELETE NO ACTION,
+    CONSTRAINT fk_jobsstatus_jobtype FOREIGN KEY (jobtype_id) REFERENCES jobtype(jobtype_id) ON DELETE NO ACTION,
+    CONSTRAINT fk_jobsstatus_contentstore FOREIGN KEY (global_session) REFERENCES jobs_contentstore(global_session) ON DELETE NO ACTION
+);
+
+-- Add ordering index for jobsstatus (optional, based on ordering in Django Meta)
+CREATE INDEX idx_jobsstatus_globalsession_priority ON jobsstatus(global_session, job_priority);
+
+-- Table: sessionkeyvaluelog
+CREATE TABLE sessionkeyvaluelog (
+    id SERIAL PRIMARY KEY,
+    global_session VARCHAR(36) NOT NULL,
+    jobtype_id INT NOT NULL,
+    key VARCHAR(100) NOT NULL,
+    value VARCHAR(10000),
+
+    CONSTRAINT fk_sessionkeyvaluelog_contentstore FOREIGN KEY (global_session) REFERENCES jobs_contentstore(global_session) ON DELETE NO ACTION,
+    CONSTRAINT fk_sessionkeyvaluelog_jobtype FOREIGN KEY (jobtype_id) REFERENCES jobtype(jobtype_id) ON DELETE NO ACTION,
+    CONSTRAINT unique_global_session_key UNIQUE(global_session, key)
+);
+
+-- Optional: To ensure the BaseModel fields are added to the relevant tables, add columns here:
+-- BaseModel fields: createtime, lastupdatetime, active
+-- In your Django models, these are abstract, but you must add the columns in your tables that inherit BaseModel.
+
+ALTER TABLE jobs_contentstore
+    ADD COLUMN createtime TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    ADD COLUMN lastupdatetime TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    ADD COLUMN active BOOLEAN DEFAULT TRUE NOT NULL;
+
+ALTER TABLE jobsstatus
+    ADD COLUMN createtime TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    ADD COLUMN lastupdatetime TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    ADD COLUMN active BOOLEAN DEFAULT TRUE NOT NULL;
+
+ALTER TABLE sessionkeyvaluelog
+    ADD COLUMN createtime TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    ADD COLUMN lastupdatetime TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    ADD COLUMN active BOOLEAN DEFAULT TRUE NOT NULL;
+

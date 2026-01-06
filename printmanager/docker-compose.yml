@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: ./printmanager
+      dockerfile: Dockerfile
+    command: gunicorn printmanager.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - ./printmanager:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./printmanager/.env
+    depends_on:
+      - redis
+
+  celery-generator:
+    build:
+      context: ./printmanager
+      dockerfile: Dockerfile
+    command: celery -A printmanager worker -Q generator -n generator_worker@%h -l info
+    volumes:
+      - ./printmanager:/app
+    env_file:
+      - ./printmanager/.env
+    depends_on:
+      - redis
+
+  celery-watcher:
+    build:
+      context: ./printmanager
+      dockerfile: Dockerfile
+    command: celery -A printmanager worker -Q watcher -n watcher_worker@%h -l info
+    volumes:
+      - ./printmanager:/app
+    env_file:
+      - ./printmanager/.env
+    depends_on:
+      - redis
+
+  celery-beat:
+    build:
+      context: ./printmanager
+      dockerfile: Dockerfile
+    command: celery -A printmanager beat -l info
+    volumes:
+      - ./printmanager:/app
+    env_file:
+      - ./printmanager/.env
+    depends_on:
+      - redis
+
+  flower:
+    build:
+      context: ./printmanager
+      dockerfile: Dockerfile
+    command: celery -A printmanager flower --port=5555
+    volumes:
+      - ./printmanager:/app
+    env_file:
+      - ./printmanager/.env
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"

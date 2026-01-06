@@ -1,0 +1,14 @@
+[Unit]
+Description=PrintManager Django Web Server
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/home/vboxuser/printmanager
+Environment="PATH=/home/vboxuser/printmanager/venv/bin"
+ExecStart=/home/vboxuser/printmanager/venv/bin/python3 manage.py runserver 0.0.0.0:8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

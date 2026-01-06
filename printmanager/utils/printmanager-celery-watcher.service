@@ -1,0 +1,15 @@
+[Unit]
+Description=PrintManager Celery Worker (Watcher)
+After=network.target
+
+[Service]
+User=vboxuser
+Group=vboxuser
+WorkingDirectory=/home/vboxuser/printmanager
+Environment="PATH=/home/vboxuser/printmanager/venv/bin"
+ExecStart=/home/vboxuser/printmanager/venv/bin/celery -A printmanager worker -Q watcher -n watcher_worker@%h -l info
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+

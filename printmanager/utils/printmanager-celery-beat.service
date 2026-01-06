@@ -1,0 +1,14 @@
+[Unit]
+Description=PrintManager Celery Beat Service
+After=network.target
+
+[Service]
+User=vboxuser
+Group=vboxuser
+WorkingDirectory=/home/vboxuser/printmanager
+Environment="PATH=/home/vboxuser/printmanager/venv/bin"
+ExecStart=/home/vboxuser/printmanager/venv/bin/celery -A printmanager beat --loglevel=info
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
